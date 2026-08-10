@@ -815,7 +815,9 @@ def click_more(
                 )
             except Exception:
                 pass
-
+                
+            time.sleep(5)  # ← これだけ追加スクロール
+            
             try:
                 button.click()
             except Exception:
@@ -2455,6 +2457,16 @@ for batch_start in range(
                         target_button,
                     )
                     
+                    # ======================================
+                    # 検索ボタンは1回だけクリックする
+                    #
+                    # 通常クリックそのものが例外になった場合のみ
+                    # JSクリックをフォールバックとして使用する。
+                    #
+                    # 「クリックしたがURL遷移しない」場合には
+                    # 再クリックしない。
+                    # ======================================
+                    
                     try:
                         target_button.click()
                     
@@ -2473,16 +2485,29 @@ for batch_start in range(
                         )
                     
                     # ======================================
-                    # クリック成功確認
-                    # URLが目的台番号になったか最大5秒待つ
+                    # URL遷移を最大15秒待つ
+                    #
+                    # ここでは検索ボタンを再クリックしない。
+                    # サイト側のレスポンスが遅い場合も
+                    # 最大15秒そのまま待つ。
                     # ======================================
                     
+                    print(
+                        "[SEARCH] "
+                        "目的台番号のURL遷移待機"
+                        "（最大15秒）"
+                    )
+                    
                     click_success = False
-                    click_deadline = time.time() + 5
+                    click_deadline = time.time() + 15
+                    
+                    last_url = ""
                     
                     while time.time() < click_deadline:
                         try:
                             current_url = browser.current_url
+                    
+                            last_url = current_url
                     
                             if expected_param in current_url:
                                 click_success = True
@@ -2494,7 +2519,7 @@ for batch_start in range(
                                 )
                     
                                 print(
-                                    f"[SEARCH] 遷移後URL: "
+                                    "[SEARCH] 遷移後URL: "
                                     f"{current_url}"
                                 )
                     
@@ -2506,95 +2531,38 @@ for batch_start in range(
                         except Exception:
                             pass
                     
-                        time.sleep(0.2)
+                        time.sleep(0.5)
                     
                     # ======================================
-                    # URLが変わらなければ1回だけ再クリック
+                    # 15秒経過しても目的URLでなければ失敗
+                    #
+                    # 重要:
+                    # ここでは再クリックしない。
+                    #
+                    # RuntimeErrorを上へ投げ、
+                    # 既存のブラウザ終了・HR01再起動処理へ
+                    # 任せる。
                     # ======================================
                     
                     if not click_success:
                         print(
-                            "[SEARCH WARN] "
-                            "5秒以内に目的URLへ変化しないため"
-                            "検索ボタンを再クリックします"
-                        )
-                    
-                        # ボタンを取り直す
-                        buttons = browser.find_elements(
-                            *search_button_locator
-                        )
-                    
-                        retry_button = next(
-                            (
-                                button
-                                for button in buttons
-                                if (
-                                    button.is_displayed()
-                                    and button.is_enabled()
-                                )
-                            ),
-                            None,
-                        )
-                    
-                        if retry_button is None:
-                            raise RuntimeError(
-                                "再クリック用の検索ボタンが"
-                                "見つかりませんでした。"
-                            )
-                    
-                        browser.execute_script(
-                            "arguments[0].click();",
-                            retry_button,
+                            "[SEARCH ERROR] "
+                            "15秒以内に目的台番号のURLへ"
+                            "遷移しませんでした"
                         )
                     
                         print(
-                            "[SEARCH] "
-                            "検索ボタン再クリック実行"
+                            "[SEARCH ERROR] "
+                            f"expected={expected_param!r}, "
+                            f"current_url={last_url!r}"
                         )
                     
-                        # ==================================
-                        # 再クリック後も最大5秒確認
-                        # ==================================
-                    
-                        retry_deadline = time.time() + 5
-                    
-                        while time.time() < retry_deadline:
-                            try:
-                                current_url = browser.current_url
-                    
-                                if expected_param in current_url:
-                                    click_success = True
-                    
-                                    print(
-                                        "[SEARCH] "
-                                        "再クリック成功確認: "
-                                        f"{expected_param}"
-                                    )
-                    
-                                    print(
-                                        f"[SEARCH] 遷移後URL: "
-                                        f"{current_url}"
-                                    )
-                    
-                                    break
-                    
-                            except WebDriverException:
-                                raise
-                    
-                            except Exception:
-                                pass
-                    
-                            time.sleep(0.2)
-                    
-                    # ======================================
-                    # 2回ともURLが変わらなければクリック失敗
-                    # ======================================
-                    
-                    if not click_success:
                         raise RuntimeError(
-                            "検索ボタンをクリックしても"
-                            "目的台番号のURLへ遷移しませんでした。"
+                            "検索ボタンを1回クリックしましたが、"
+                            "15秒以内に目的台番号のURLへ"
+                            "遷移しませんでした。"
                             f" expected={expected_param!r}"
+                            f" current_url={last_url!r}"
                         )
                     
                     # --------------------------------------
@@ -2614,6 +2582,17 @@ for batch_start in range(
                         )
                     )
 
+
+                    # --------------------------------------
+                    # もっと見る前の固定待機
+                    # --------------------------------------
+                    
+                    print(
+                        "[WAIT] もっと見るクリック前に8秒待機"
+                    )
+                    
+                    time.sleep(8)
+                    
                     # --------------------------------------
                     # もっと見る
                     # --------------------------------------
@@ -2625,8 +2604,8 @@ for batch_start in range(
                     more_click_count = click_more(
                         browser,
                         max_clicks=5,
-                        wait_after_click=6,
-                        change_timeout=5,
+                        wait_after_click=10,
+                        change_timeout=10,
                     )
 
                     print(
@@ -3085,9 +3064,6 @@ for batch_start in range(
                         "台データ取得完了"
                     )
 
-                    # 次の台へ進む前の待機
-                    time.sleep(10)
-
                     # 台番号処理成功
                     break
 
@@ -3350,12 +3326,12 @@ for batch_start in range(
         # ==================================================
         # 台番号ごとに必ずDB保存
         # ==================================================
-
+        
         finally:
             print_step(
                 "DB保存"
             )
-
+        
             try:
                 insert_scraping_row(
                     conn,
@@ -3364,7 +3340,7 @@ for batch_start in range(
                     DB_TODAY_SCHEMA,
                     HIST_RE,
                 )
-
+        
             except Exception as db_error:
                 print(
                     "[DB保存失敗] "
@@ -3372,7 +3348,19 @@ for batch_start in range(
                     f"{data_entry.get('SKU')} "
                     f"err={db_error!r}"
                 )
-
+        
+            # ==============================================
+            # 次の台番号検索まで待機
+            #
+            # DB保存まで完全に終了してから
+            # 次の台の検索通信まで間隔を空ける。
+            # ==============================================
+        
+            print(
+                "[WAIT] 次の台まで15秒待機"
+            )
+            
+            time.sleep(15)
 
     # ==================================================
     # バッチ終了
