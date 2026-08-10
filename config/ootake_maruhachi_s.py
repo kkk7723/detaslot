@@ -29,6 +29,9 @@ SHOP_NAME = "大竹マルハチs"
 # クッキー取得に使うurl
 COOKIE_URL = "https://www.pscube.jp/dedamajyoho-P-townDMMpachi/c709505"
 
+# ログにでてくるファイル名
+LOG_FILE_SUFFIX = "ootake_maruhachi_s.log"
+
 # =========================================================
 # 公開URL設定
 # =========================================================

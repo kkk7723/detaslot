@@ -26,6 +26,9 @@ PROJECT_DIR = "oono_gaia_s"
 # HTMLやサイト内で表示する店舗名
 SHOP_NAME = "大野ガイアs"
 
+# ログにでてくるファイル名
+LOG_FILE_SUFFIX = "oono_gaia_s.log"
+
 
 # =========================================================
 # 公開URL設定

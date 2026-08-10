@@ -26,6 +26,8 @@ PROJECT_DIR = "gigaslot"
 # HTMLやサイト内で表示する店舗名
 SHOP_NAME = "ギガスロ"
 
+# ログにでてくるファイル名
+LOG_FILE_SUFFIX = "gigaslot.log"
 
 # =========================================================
 # 公開URL設定
