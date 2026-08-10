@@ -685,6 +685,10 @@ def collect_mode3_groups(
         ]
     ] = []
 
+    # ==============================================
+    # MODE3候補のul取得
+    # ==============================================
+
     lists = (
         driver.find_elements(
             By.CSS_SELECTOR,
@@ -692,7 +696,9 @@ def collect_mode3_groups(
         )
     )
 
-    for item_list in lists:
+    for list_index, item_list in enumerate(
+        lists
+    ):
         rows = (
             item_list.find_elements(
                 By.TAG_NAME,
@@ -707,8 +713,14 @@ def collect_mode3_groups(
             ]
         ] = []
 
-        for row in rows:
+        for row_index, row in enumerate(
+            rows
+        ):
             try:
+                # ======================================
+                # title / value取得
+                # ======================================
+
                 title_elements = (
                     row.find_elements(
                         By.CSS_SELECTOR,
@@ -725,10 +737,18 @@ def collect_mode3_groups(
 
                 title = (
                     (
-                        title_elements[0].text
+                        title_elements[0]
+                        .get_attribute(
+                            "textContent"
+                        )
                         if title_elements
                         else ""
                     )
+                    or ""
+                )
+
+                title = (
+                    title
                     .replace(
                         "\u00a0",
                         " ",
@@ -738,16 +758,88 @@ def collect_mode3_groups(
 
                 value = (
                     (
-                        value_elements[0].text
+                        value_elements[0]
+                        .get_attribute(
+                            "textContent"
+                        )
                         if value_elements
                         else ""
                     )
+                    or ""
+                )
+
+                value = (
+                    value
                     .replace(
                         "\u00a0",
                         " ",
                     )
                     .strip()
                 )
+
+                # ======================================
+                # title/valueが取れない場合のみ
+                # liのHTML構造をDEBUG表示
+                # ======================================
+
+                if not title:
+                    try:
+                        outer_html = (
+                            row.get_attribute(
+                                "outerHTML"
+                            )
+                            or ""
+                        )
+
+                        if len(outer_html) > 1500:
+                            outer_html = (
+                                outer_html[:1500]
+                                + "..."
+                            )
+
+                        row_text = (
+                            row.get_attribute(
+                                "textContent"
+                            )
+                            or ""
+                        )
+
+                        row_text = (
+                            row_text
+                            .replace(
+                                "\u00a0",
+                                " ",
+                            )
+                            .replace(
+                                "\n",
+                                " ",
+                            )
+                            .strip()
+                        )
+
+                        print(
+                            "[TODAY MODE3 LI DEBUG] "
+                            f"ul={list_index} "
+                            f"li={row_index} "
+                            f"text={row_text!r}"
+                        )
+
+                        print(
+                            "[TODAY MODE3 LI DEBUG] "
+                            f"html={outer_html!r}"
+                        )
+
+                    except Exception as debug_error:
+                        print(
+                            "[TODAY MODE3 LI DEBUG] "
+                            f"取得失敗: "
+                            f"{type(debug_error).__name__}: "
+                            f"{debug_error}"
+                        )
+
+                # ======================================
+                # グループへ追加
+                # ======================================
 
                 items.append(
                     (
@@ -756,7 +848,15 @@ def collect_mode3_groups(
                     )
                 )
 
-            except Exception:
+            except Exception as error:
+                print(
+                    "[TODAY MODE3 WARN] "
+                    f"ul={list_index} "
+                    f"li={row_index} "
+                    f"{type(error).__name__}: "
+                    f"{error}"
+                )
+
                 items.append(
                     (
                         "",
@@ -781,9 +881,25 @@ def collect_today_mode3(
 ]:
     """
     MODE 3:
+
     ul.nc-border-a > li の
-    .titleと.valueを取得する。
+    .title と .value を取得する。
+
+    ページ内・iframe内に複数の
+    ul.nc-border-a が存在する場合は、
+
+    DB_TODAY_SCHEMA のラベルと
+    最も多く一致するグループを
+    本日欄として採用する。
+
+    DBラベルと1件も一致しないグループは
+    本日欄候補として採用しない。
+
+    候補が見つからなかった場合は、
+    原因確認用にページ内のul情報を
+    DEBUGログへ表示する。
     """
+
     expected_labels = set(
         DB_TODAY_KEYMAP
     )
@@ -799,6 +915,10 @@ def collect_today_mode3(
         -1,
         -1,
     )
+
+    # ==============================================
+    # グループのスコア計算
+    # ==============================================
 
     def score_group(
         group: list[
@@ -821,14 +941,21 @@ def collect_today_mode3(
         matching_count = sum(
             1
             for title in titles
-            if title
-            in expected_labels
+            if (
+                title
+                and title
+                in expected_labels
+            )
         )
 
         return (
             matching_count,
             len(group),
         )
+
+    # ==============================================
+    # 現在のframe内を確認
+    # ==============================================
 
     def inspect_current_context(
     ) -> None:
@@ -848,9 +975,28 @@ def collect_today_mode3(
                 )
             )
 
+            matching_count = (
+                score[0]
+            )
+
+            # --------------------------------------
+            # DBラベルと1件も一致しないものは
+            # 本日欄候補から除外
+            # --------------------------------------
+            if matching_count == 0:
+                continue
+
+            # --------------------------------------
+            # 一致数が多いグループを採用
+            # 一致数が同じなら行数が多い方
+            # --------------------------------------
             if score > best_score:
                 best_group = group
                 best_score = score
+
+    # ==============================================
+    # トップページ確認
+    # ==============================================
 
     try:
         driver.switch_to.default_content()
@@ -859,6 +1005,10 @@ def collect_today_mode3(
 
     except Exception:
         pass
+
+    # ==============================================
+    # iframe再帰探索
+    # ==============================================
 
     def inspect_frames(
         depth: int,
@@ -891,7 +1041,10 @@ def collect_today_mode3(
                 pass
 
             finally:
-                driver.switch_to.parent_frame()
+                try:
+                    driver.switch_to.parent_frame()
+                except Exception:
+                    pass
 
     try:
         driver.switch_to.default_content()
@@ -903,11 +1056,118 @@ def collect_today_mode3(
     finally:
         driver.switch_to.default_content()
 
+    # ==============================================
+    # 本日欄が見つからなかった場合
+    # DEBUG用にulの中身を確認
+    # ==============================================
+
     if not best_group:
-        raise RuntimeError(
-            "MODE3のtitle/valueペアが"
-            "見つかりませんでした"
+        print(
+            "[TODAY MODE3 DEBUG] "
+            "本日欄候補が見つからないため"
+            "DOMを確認します"
         )
+
+        try:
+            driver.switch_to.default_content()
+
+            all_lists = (
+                driver.find_elements(
+                    By.CSS_SELECTOR,
+                    "ul",
+                )
+            )
+
+            print(
+                "[TODAY MODE3 DEBUG] "
+                f"トップ階層ul数="
+                f"{len(all_lists)}"
+            )
+
+            for index, element in enumerate(
+                all_lists[:30]
+            ):
+                try:
+                    class_name = (
+                        element.get_attribute(
+                            "class"
+                        )
+                        or ""
+                    )
+
+                    element_id = (
+                        element.get_attribute(
+                            "id"
+                        )
+                        or ""
+                    )
+
+                    text = (
+                        element.get_attribute(
+                            "textContent"
+                        )
+                        or ""
+                    )
+
+                    text = (
+                        text
+                        .replace(
+                            "\xa0",
+                            " ",
+                        )
+                        .replace(
+                            "\n",
+                            " ",
+                        )
+                        .strip()
+                    )
+
+                    if len(text) > 300:
+                        text = (
+                            text[:300]
+                            + "..."
+                        )
+
+                    print(
+                        "[TODAY MODE3 DEBUG] "
+                        f"ul[{index}] "
+                        f"id={element_id!r} "
+                        f"class={class_name!r} "
+                        f"text={text!r}"
+                    )
+
+                except Exception as debug_error:
+                    print(
+                        "[TODAY MODE3 DEBUG] "
+                        f"ul[{index}]取得失敗: "
+                        f"{type(debug_error).__name__}: "
+                        f"{debug_error}"
+                    )
+
+        except Exception as debug_error:
+            print(
+                "[TODAY MODE3 DEBUG] "
+                "DOM確認失敗: "
+                f"{type(debug_error).__name__}: "
+                f"{debug_error}"
+            )
+
+        finally:
+            try:
+                driver.switch_to.default_content()
+            except Exception:
+                pass
+
+        raise RuntimeError(
+            "MODE3の本日欄候補が"
+            "見つかりませんでした。"
+            " DBラベルと一致する"
+            "title/valueペアがありません"
+        )
+
+    # ==============================================
+    # 最終採用グループ
+    # ==============================================
 
     labels = [
         title
@@ -919,11 +1179,16 @@ def collect_today_mode3(
         for _, value in best_group
     ]
 
+    print(
+        "[TODAY MODE3] "
+        f"採用スコア={best_score} "
+        f"rows={len(best_group)}"
+    )
+
     return (
         labels,
         values,
     )
-
 
 # =========================================================
 # MODE分岐

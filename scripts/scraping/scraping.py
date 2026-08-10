@@ -75,7 +75,9 @@ from utils.network_utils import (
     get_global_ip,
     get_squid_ip,
     reboot_hr01_sync,
+    reset_hr01_route,
     resolve_proxy,
+    verify_hr01_global_ip,
 )
 
 from utils.today_mode_utils import (
@@ -488,7 +490,9 @@ def open_browser(proxy_url=None):
 
     起動前後のChrome系プロセスを比較し、
     今回増えたPIDと、このブラウザ専用の
-    user-data-dirを保存する。
+    user-data-dirを内部では保存する。
+
+    ログは必要最低限だけ表示する。
     """
     prefix = "[MAIN]"
 
@@ -546,6 +550,10 @@ def open_browser(proxy_url=None):
         f"{prefix} Driver起動開始"
     )
 
+    # ==============================================
+    # Driver起動
+    # ==============================================
+
     driver = Driver(
         uc=True,
         headless=False,
@@ -574,13 +582,8 @@ def open_browser(proxy_url=None):
     print(
         f"{prefix} Chrome起動後の"
         f"Chrome系プロセス数="
-        f"{len(after_processes)}"
-    )
-
-    print(
-        f"{prefix} 今回増えた"
-        f"Chrome系PID="
-        f"{new_process_ids}"
+        f"{len(after_processes)} "
+        f"（増加={len(new_process_ids)}）"
     )
 
     # ==============================================
@@ -622,30 +625,6 @@ def open_browser(proxy_url=None):
                 break
 
     # ==============================================
-    # 今回増えたプロセスをログ表示
-    # ==============================================
-
-    for process_id in new_process_ids:
-        process_info = after_processes.get(
-            process_id
-        )
-
-        if not process_info:
-            continue
-
-        print(
-            "[PROCESS] "
-            f"PID={process_info['pid']} | "
-            f"PPID={process_info['ppid']} | "
-            f"name={process_info['name']}"
-        )
-
-        print(
-            "[PROCESS CMD] "
-            f"{process_info['cmdline']}"
-        )
-
-    # ==============================================
     # 後の強制終了処理で使う情報を保存
     # ==============================================
 
@@ -658,8 +637,7 @@ def open_browser(proxy_url=None):
     )
 
     print(
-        f"{prefix} このブラウザの"
-        f"user-data-dir="
+        f"{prefix} user-data-dir="
         f"{profile_dir}"
     )
 
@@ -669,14 +647,17 @@ def open_browser(proxy_url=None):
             "user-data-dirを取得できませんでした"
         )
 
+    # ==============================================
+    # ブラウザサイズ
+    # ==============================================
+
     driver.set_window_size(
-        200,
-        1920,
+        600,
+        1080,
     )
 
     print(
         f"{prefix} Chrome launched "
-        f"(SeleniumBase Driver). "
         f"session_id={driver.session_id}"
     )
 
@@ -707,19 +688,23 @@ def open_browser(proxy_url=None):
     )
 
     print(
-        f"{prefix} driver.service PID="
+        f"{prefix} driver PID="
         f"{service_pid}"
     )
 
+    # ==============================================
+    # Proxy表示
+    # ==============================================
+
     if use_proxy:
         print(
-            f"{prefix} proxy set: "
+            f"{prefix} proxy="
             f"{use_proxy}"
         )
 
     else:
         print(
-            f"{prefix} no proxy"
+            f"{prefix} proxy=(none)"
         )
 
     return driver
@@ -971,6 +956,10 @@ def wait_search_menu_ready(
     台番号入力欄 cd_dai は、
     検索メニューをクリックした後に表示されるため、
     ここでは待たない。
+
+    タイムアウト時は、
+    URL・タイトル・readyState・
+    search-item数・iframe数などをログ出力する。
     """
     locator = (
         By.XPATH,
@@ -983,28 +972,58 @@ def wait_search_menu_ready(
     deadline = time.time() + timeout
     last_error = None
 
+    last_top_count = 0
+    last_iframe_count = 0
+    last_search_item_count = 0
+
     while time.time() < deadline:
         try:
+            # ==========================================
+            # まずトップ階層を確認
+            # ==========================================
             driver.switch_to.default_content()
 
-            elements = driver.find_elements(*locator)
+            elements = driver.find_elements(
+                *locator
+            )
+
+            last_top_count = len(elements)
 
             for element in elements:
-                if (
-                    element.is_displayed()
-                    and element.is_enabled()
-                ):
-                    print(
-                        "[NAV] 台番号検索メニュー描画完了"
-                    )
-                    return element
+                try:
+                    if (
+                        element.is_displayed()
+                        and element.is_enabled()
+                    ):
+                        print(
+                            "[NAV] 台番号検索メニュー"
+                            "描画完了"
+                        )
 
+                        driver.switch_to.default_content()
+
+                        return element
+
+                except Exception as exc:
+                    last_error = exc
+                    continue
+
+            # ==========================================
+            # iframe数確認
+            # ==========================================
             frames = driver.find_elements(
                 By.TAG_NAME,
                 "iframe",
             )
 
-            for frame in frames:
+            last_iframe_count = len(frames)
+
+            # ==========================================
+            # iframe内を探索
+            # ==========================================
+            for frame_index, frame in enumerate(
+                frames
+            ):
                 try:
                     driver.switch_to.default_content()
                     driver.switch_to.frame(frame)
@@ -1014,15 +1033,23 @@ def wait_search_menu_ready(
                     )
 
                     for element in elements:
-                        if (
-                            element.is_displayed()
-                            and element.is_enabled()
-                        ):
-                            print(
-                                "[NAV] 台番号検索メニュー描画完了"
-                                "（iframe内）"
-                            )
-                            return element
+                        try:
+                            if (
+                                element.is_displayed()
+                                and element.is_enabled()
+                            ):
+                                print(
+                                    "[NAV] 台番号検索メニュー"
+                                    "描画完了"
+                                    "（iframe内 "
+                                    f"index={frame_index}）"
+                                )
+
+                                return element
+
+                        except Exception as exc:
+                            last_error = exc
+                            continue
 
                 except Exception as exc:
                     last_error = exc
@@ -1030,16 +1057,154 @@ def wait_search_menu_ready(
 
             driver.switch_to.default_content()
 
+            # ==========================================
+            # search-item自体が存在するか確認
+            # ==========================================
+            try:
+                last_search_item_count = len(
+                    driver.find_elements(
+                        By.CSS_SELECTOR,
+                        ".search-item",
+                    )
+                )
+
+            except Exception as exc:
+                last_error = exc
+
         except Exception as exc:
             last_error = exc
 
         time.sleep(0.5)
 
-    driver.switch_to.default_content()
+    # ==============================================
+    # タイムアウト時の詳細ログ
+    # ==============================================
+    try:
+        driver.switch_to.default_content()
+    except Exception:
+        pass
+
+    try:
+        current_url = driver.current_url
+    except Exception as exc:
+        current_url = (
+            f"(取得失敗: "
+            f"{type(exc).__name__}: {exc})"
+        )
+
+    try:
+        title = driver.title
+    except Exception as exc:
+        title = (
+            f"(取得失敗: "
+            f"{type(exc).__name__}: {exc})"
+        )
+
+    try:
+        ready_state = driver.execute_script(
+            "return document.readyState"
+        )
+    except Exception as exc:
+        ready_state = (
+            f"(取得失敗: "
+            f"{type(exc).__name__}: {exc})"
+        )
+
+    try:
+        page_source_length = len(
+            driver.page_source
+        )
+    except Exception:
+        page_source_length = -1
+
+    try:
+        body_text = driver.find_element(
+            By.TAG_NAME,
+            "body",
+        ).text
+    except Exception:
+        body_text = ""
+
+    body_preview = (
+        body_text
+        .replace("\n", " ")
+        .strip()
+    )
+
+    if len(body_preview) > 500:
+        body_preview = (
+            body_preview[:500]
+            + "..."
+        )
+
+    print()
+    print(
+        "========== [NAV DEBUG] =========="
+    )
+
+    print(
+        f"[NAV DEBUG] timeout={timeout}秒"
+    )
+
+    print(
+        f"[NAV DEBUG] current_url="
+        f"{current_url}"
+    )
+
+    print(
+        f"[NAV DEBUG] title="
+        f"{title!r}"
+    )
+
+    print(
+        f"[NAV DEBUG] readyState="
+        f"{ready_state}"
+    )
+
+    print(
+        f"[NAV DEBUG] 対象XPath要素数="
+        f"{last_top_count}"
+    )
+
+    print(
+        f"[NAV DEBUG] search-item数="
+        f"{last_search_item_count}"
+    )
+
+    print(
+        f"[NAV DEBUG] iframe数="
+        f"{last_iframe_count}"
+    )
+
+    print(
+        f"[NAV DEBUG] page_source長="
+        f"{page_source_length}"
+    )
+
+    print(
+        f"[NAV DEBUG] body先頭="
+        f"{body_preview!r}"
+    )
+
+    print(
+        f"[NAV DEBUG] last_error="
+        f"{last_error!r}"
+    )
+
+    print(
+        "================================="
+    )
+    print()
 
     raise TimeoutException(
         "台番号検索メニューが"
         f"{timeout}秒以内に描画されませんでした。"
+        f" current_url={current_url!r}"
+        f" readyState={ready_state!r}"
+        f" target_count={last_top_count}"
+        f" search_item_count="
+        f"{last_search_item_count}"
+        f" iframe_count={last_iframe_count}"
         f" last_error={last_error!r}"
     )
 
@@ -1379,6 +1544,17 @@ def open_and_navigate_with_retry(
         drv = None
 
         try:
+            # ==========================================
+            # 使用Proxy確認
+            # ==========================================
+            print(
+                f"[NET] Chrome使用Proxy: "
+                f"{proxy_url or '(none)'}"
+            )
+
+            # ==========================================
+            # Chrome起動
+            # ==========================================
             drv = open_browser(
                 proxy_url=proxy_url
             )
@@ -1387,6 +1563,27 @@ def open_and_navigate_with_retry(
             drv.set_page_load_timeout(30)
 
             wait_browser_ready(drv)
+
+            # ==========================================
+            # Chrome起動後のHR01経由確認
+            # ==========================================
+            print(
+                "[NET] Chrome起動後の"
+                "HR01経由確認開始"
+            )
+
+            hr01_ip, squid_ip = verify_hr01_global_ip(
+                hr01_interface=HR01_INTERFACE,
+                squid_proxy=SQUID_PROXY,
+                timeout=20,
+                require_match=True,
+            )
+
+            print(
+                "[NET] Chrome/Squidは"
+                "HR01経由です: "
+                f"{squid_ip}"
+            )
 
             # =====================
             # ホームアクセス
@@ -1442,8 +1639,9 @@ def open_and_navigate_with_retry(
                 except Exception:
                     pass
 
-            # ここから下は、
-            # 正常時・Timeout時の両方で必ず実行する
+            # ==========================================
+            # 本命URLのHTML読み込み完了待ち
+            # ==========================================
             WebDriverWait(
                 drv,
                 30,
@@ -1456,13 +1654,115 @@ def open_and_navigate_with_retry(
                 )
             )
 
-            # JavaScript描画される
-            # 「台番号で探す」メニューを待つ
-            wait_search_menu_ready(
-                drv,
-                timeout=30,
-            )
+            # ==========================================
+            # 台番号検索メニューをまず8秒待つ
+            # ==========================================
+            try:
+                print(
+                    "[NAV] 台番号検索メニュー待機"
+                    "（最大8秒）"
+                )
 
+                wait_search_menu_ready(
+                    drv,
+                    timeout=8,
+                )
+
+            except TimeoutException:
+                # ======================================
+                # 8秒以内に描画されなければ
+                # 「スロットデータ」リンクをクリック
+                # ======================================
+                print(
+                    "[NAV] 台番号検索メニューが"
+                    "8秒以内に描画されませんでした"
+                )
+
+                try:
+                    print(
+                        f"[NAV] リンククリック前URL: "
+                        f"{drv.current_url}"
+                    )
+                except Exception:
+                    pass
+
+                print(
+                    "[NAV] 「スロットデータ」"
+                    "リンクをクリックします"
+                )
+
+                # ======================================
+                # スロットデータリンクを取得
+                #
+                # <a href="cgi-bin/nc-v03-001.php?cd_ps=2">
+                # ======================================
+                slot_link = WebDriverWait(
+                    drv,
+                    10,
+                ).until(
+                    EC.element_to_be_clickable(
+                        (
+                            By.CSS_SELECTOR,
+                            (
+                                'a[href="cgi-bin/'
+                                'nc-v03-001.php?cd_ps=2"]'
+                            ),
+                        )
+                    )
+                )
+
+                # ======================================
+                # スロットデータリンクをクリック
+                # ======================================
+                try:
+                    slot_link.click()
+
+                except Exception:
+                    drv.execute_script(
+                        "arguments[0].click();",
+                        slot_link,
+                    )
+
+                # ======================================
+                # クリック後のページ読み込み待ち
+                # ======================================
+                WebDriverWait(
+                    drv,
+                    30,
+                ).until(
+                    lambda d: d.execute_script(
+                        "return document.readyState"
+                    ) in (
+                        "interactive",
+                        "complete",
+                    )
+                )
+
+                try:
+                    print(
+                        f"[NAV] リンククリック後URL: "
+                        f"{drv.current_url}"
+                    )
+                except Exception:
+                    pass
+
+                # ======================================
+                # クリック後に台番号検索メニューを待つ
+                # ======================================
+                print(
+                    "[NAV] リンククリック後、"
+                    "台番号検索メニュー待機"
+                    "（最大30秒）"
+                )
+
+                wait_search_menu_ready(
+                    drv,
+                    timeout=30,
+                )
+
+            # ==========================================
+            # ナビゲーション成功
+            # ==========================================
             print(
                 f"[NAV] 成功（試行 "
                 f"{attempt}/{MAX_NAV_RETRY}）"
@@ -1498,7 +1798,7 @@ def open_and_navigate_with_retry(
     raise RuntimeError(
         f"ナビゲーションに失敗: {last_err}"
     )
-
+    
 # ======== ★ 行ごとの“最小”再起動用（1回だけ） ========
 def ensure_on_target_or_raise(
     driver,
@@ -1574,7 +1874,7 @@ def wait_for_update_date(
     driver,
     *,
     dai_number,
-    timeout=30,
+    timeout=60,
 ) -> tuple[str, str]:
     """
     検索後、次の条件が両方成立するまで最大timeout秒待つ。
@@ -1582,60 +1882,230 @@ def wait_for_update_date(
     1. 取得更新日 #upYMDhms が空ではない
     2. 表示台番号が検索台番号と一致する
 
+    Cloudflare確認画面が表示された場合は、
+    トップページおよびiframeを確認してログを出す。
+
+    Cloudflareが自動通過した場合はそのまま続行する。
+    一定時間残り続けた場合は例外を出す。
+
     Returns
     -------
     tuple[str, str]
         取得更新日の生文字列、画面上の台番号表示
     """
+
     expected_number = normalize_dai_number(
         dai_number
     )
 
     deadline = time.time() + timeout
+
     last_update_text = ""
     last_display_text = ""
     last_display_number = ""
 
+    # Cloudflareを最初に検出した時刻
+    cloudflare_started_at = None
+
+    # 同じiframe検出ログを何度も出さないため
+    cloudflare_logged = False
+
     while time.time() < deadline:
         try:
+            # ==========================================
             # ブラウザクラッシュ・セッション切断確認
+            # ==========================================
             driver.execute_script(
                 "return document.readyState"
             )
 
+            # ==========================================
+            # Cloudflare確認
+            # ==========================================
+            cloudflare_detected = False
+
+            # ------------------------------------------
+            # トップページ確認
+            # ------------------------------------------
+            try:
+                driver.switch_to.default_content()
+
+                title = (
+                    driver.title
+                    or ""
+                ).lower()
+
+                body_text = (
+                    driver.find_element(
+                        By.TAG_NAME,
+                        "body",
+                    ).text
+                    or ""
+                ).lower()
+
+                if (
+                    "just a moment" in title
+                    or "verify you are human" in body_text
+                    or "cloudflare" in body_text
+                ):
+                    cloudflare_detected = True
+
+            except Exception:
+                pass
+
+            # ------------------------------------------
+            # iframe確認
+            # ------------------------------------------
+            try:
+                driver.switch_to.default_content()
+
+                frames = driver.find_elements(
+                    By.TAG_NAME,
+                    "iframe",
+                )
+
+                for frame_index, frame in enumerate(
+                    frames
+                ):
+                    try:
+                        frame_src = (
+                            frame.get_attribute(
+                                "src"
+                            )
+                            or ""
+                        ).lower()
+
+                        frame_title = (
+                            frame.get_attribute(
+                                "title"
+                            )
+                            or ""
+                        ).lower()
+
+                        if (
+                            "cloudflare" in frame_src
+                            or "challenge" in frame_src
+                            or "turnstile" in frame_src
+                            or "cloudflare" in frame_title
+                            or "challenge" in frame_title
+                            or "turnstile" in frame_title
+                        ):
+                            cloudflare_detected = True
+
+                            if not cloudflare_logged:
+                                print(
+                                    "[CLOUDFLARE] "
+                                    "Cloudflare iframeを検出: "
+                                    f"index={frame_index}, "
+                                    f"src={frame_src!r}, "
+                                    f"title={frame_title!r}"
+                                )
+
+                                cloudflare_logged = True
+
+                            break
+
+                    except Exception:
+                        continue
+
+            except Exception:
+                pass
+
+            finally:
+                try:
+                    driver.switch_to.default_content()
+                except Exception:
+                    pass
+
+            # ==========================================
+            # Cloudflare表示中
+            # ==========================================
+            if cloudflare_detected:
+                if cloudflare_started_at is None:
+                    cloudflare_started_at = (
+                        time.time()
+                    )
+
+                    print(
+                        "[CLOUDFLARE] "
+                        "Cloudflare確認画面を検出しました。"
+                        "自動通過を最大15秒待ちます"
+                    )
+
+                elapsed = (
+                    time.time()
+                    - cloudflare_started_at
+                )
+
+                if elapsed >= 15:
+                    raise RuntimeError(
+                        "Cloudflare確認画面が"
+                        "15秒以内に自動通過しませんでした"
+                    )
+
+                time.sleep(0.5)
+                continue
+
+            # ==========================================
+            # Cloudflareから通常ページへ戻った
+            # ==========================================
+            if cloudflare_started_at is not None:
+                print(
+                    "[CLOUDFLARE] "
+                    "Cloudflare自動通過を確認しました"
+                )
+
+                cloudflare_started_at = None
+                cloudflare_logged = False
+
+            # ==========================================
+            # 必ずトップ階層へ戻す
+            # ==========================================
+            driver.switch_to.default_content()
+
             # ------------------------------
             # 取得更新日
             # ------------------------------
-            update_elements = driver.find_elements(
-                By.ID,
-                "upYMDhms",
+            update_elements = (
+                driver.find_elements(
+                    By.ID,
+                    "upYMDhms",
+                )
             )
 
             if update_elements:
                 try:
                     last_update_text = (
                         update_elements[0]
-                        .get_attribute("textContent")
+                        .get_attribute(
+                            "textContent"
+                        )
                         or ""
                     ).strip()
+
                 except Exception:
                     last_update_text = ""
+
             else:
                 last_update_text = ""
 
             # ------------------------------
             # 表示台番号
             # ------------------------------
-            number_elements = driver.find_elements(
-                By.CSS_SELECTOR,
-                "h2.nc-text-align-left",
+            number_elements = (
+                driver.find_elements(
+                    By.CSS_SELECTOR,
+                    "h2.nc-text-align-left",
+                )
             )
 
             if number_elements:
                 try:
                     last_display_text = (
                         number_elements[0]
-                        .get_attribute("textContent")
+                        .get_attribute(
+                            "textContent"
+                        )
                         or ""
                     ).strip()
 
@@ -1644,14 +2114,18 @@ def wait_for_update_date(
                             last_display_text
                         )
                     )
+
                 except Exception:
                     last_display_text = ""
                     last_display_number = ""
+
             else:
                 last_display_text = ""
                 last_display_number = ""
 
-            # 更新日があり、台番号も一致した場合だけ成功
+            # ==========================================
+            # 更新日あり + 台番号一致
+            # ==========================================
             if (
                 last_update_text
                 and last_display_number
@@ -1661,7 +2135,8 @@ def wait_for_update_date(
                     "[SEARCH] 検索結果を確認: "
                     f"台番号={expected_number}, "
                     f"更新日時={last_update_text!r}, "
-                    f"台番号表示={last_display_text!r}"
+                    f"台番号表示="
+                    f"{last_display_text!r}"
                 )
 
                 return (
@@ -1669,7 +2144,9 @@ def wait_for_update_date(
                     last_display_text,
                 )
 
-            # 前の台が残っている場合はエラーにせず待機
+            # ==========================================
+            # 前の検索結果が残っている
+            # ==========================================
             if (
                 last_display_number
                 and last_display_number
@@ -1681,17 +2158,29 @@ def wait_for_update_date(
                     f"表示={last_display_number}"
                 )
 
+        # ==============================================
+        # Chromeクラッシュ等
+        # ==============================================
         except WebDriverException:
-            # Chromeクラッシュ、セッション切断などは
-            # 即座に外側の再起動処理へ送る
             raise
 
+        # ==============================================
+        # Cloudflareタイムアウト等
+        # ==============================================
+        except RuntimeError:
+            raise
+
+        # ==============================================
+        # DOM切替途中など
+        # ==============================================
         except Exception:
-            # DOM切り替え途中などは再取得
             pass
 
         time.sleep(0.5)
 
+    # ==============================================
+    # 通常タイムアウト
+    # ==============================================
     raise SearchResultTimeoutError(
         f"検索後{timeout}秒以内に対象台番号の"
         "取得更新日を確認できませんでした。"
@@ -1733,6 +2222,20 @@ for batch_start in range(
         f"{batch_start}-{batch_end}: "
         f"{proxy_url or '(none)'}"
     )
+
+    # ==================================================
+    # HR01ルート設定
+    # ==================================================
+    
+    print(
+        "[NET] HR01ルート設定"
+    )
+    
+    reset_hr01_route(
+        hr01_interface=HR01_INTERFACE,
+        hr01_gateway=HR01_GATEWAY,
+    )
+
 
     # ==================================================
     # バッチ開始時のブラウザ起動
@@ -1879,6 +2382,9 @@ for batch_start in range(
                         timeout=12,
                     )
 
+                    # 追加
+                    time.sleep(3)
+
                     # --------------------------------------
                     # 検索ボタン取得
                     # --------------------------------------
@@ -1924,55 +2430,188 @@ for batch_start in range(
                         raise RuntimeError(
                             "検索ボタンが見つかりませんでした。"
                         )
-
                     # --------------------------------------
                     # 検索実行
                     # --------------------------------------
-
+                    
                     print_step(
                         "検索ボタンクリック"
                     )
-
+                    
+                    expected_number = normalize_dai_number(
+                        dai_number
+                    )
+                    
+                    expected_param = (
+                        f"cd_dai={int(expected_number):04d}"
+                    )
+                    
+                    browser.execute_script(
+                        (
+                            "arguments[0].scrollIntoView("
+                            "{block:'center'}"
+                            ");"
+                        ),
+                        target_button,
+                    )
+                    
                     try:
-                        browser.execute_script(
-                            (
-                                "arguments[0].scrollIntoView("
-                                "{block:'center'}"
-                                ");"
-                            ),
-                            target_button,
-                        )
-
                         target_button.click()
-
+                    
+                        print(
+                            "[SEARCH] 通常クリック実行"
+                        )
+                    
                     except Exception:
                         browser.execute_script(
                             "arguments[0].click();",
                             target_button,
                         )
-
+                    
+                        print(
+                            "[SEARCH] JSクリック実行"
+                        )
+                    
+                    # ======================================
+                    # クリック成功確認
+                    # URLが目的台番号になったか最大5秒待つ
+                    # ======================================
+                    
+                    click_success = False
+                    click_deadline = time.time() + 5
+                    
+                    while time.time() < click_deadline:
+                        try:
+                            current_url = browser.current_url
+                    
+                            if expected_param in current_url:
+                                click_success = True
+                    
+                                print(
+                                    "[SEARCH] "
+                                    "検索クリック成功確認: "
+                                    f"{expected_param}"
+                                )
+                    
+                                print(
+                                    f"[SEARCH] 遷移後URL: "
+                                    f"{current_url}"
+                                )
+                    
+                                break
+                    
+                        except WebDriverException:
+                            raise
+                    
+                        except Exception:
+                            pass
+                    
+                        time.sleep(0.2)
+                    
+                    # ======================================
+                    # URLが変わらなければ1回だけ再クリック
+                    # ======================================
+                    
+                    if not click_success:
+                        print(
+                            "[SEARCH WARN] "
+                            "5秒以内に目的URLへ変化しないため"
+                            "検索ボタンを再クリックします"
+                        )
+                    
+                        # ボタンを取り直す
+                        buttons = browser.find_elements(
+                            *search_button_locator
+                        )
+                    
+                        retry_button = next(
+                            (
+                                button
+                                for button in buttons
+                                if (
+                                    button.is_displayed()
+                                    and button.is_enabled()
+                                )
+                            ),
+                            None,
+                        )
+                    
+                        if retry_button is None:
+                            raise RuntimeError(
+                                "再クリック用の検索ボタンが"
+                                "見つかりませんでした。"
+                            )
+                    
+                        browser.execute_script(
+                            "arguments[0].click();",
+                            retry_button,
+                        )
+                    
+                        print(
+                            "[SEARCH] "
+                            "検索ボタン再クリック実行"
+                        )
+                    
+                        # ==================================
+                        # 再クリック後も最大5秒確認
+                        # ==================================
+                    
+                        retry_deadline = time.time() + 5
+                    
+                        while time.time() < retry_deadline:
+                            try:
+                                current_url = browser.current_url
+                    
+                                if expected_param in current_url:
+                                    click_success = True
+                    
+                                    print(
+                                        "[SEARCH] "
+                                        "再クリック成功確認: "
+                                        f"{expected_param}"
+                                    )
+                    
+                                    print(
+                                        f"[SEARCH] 遷移後URL: "
+                                        f"{current_url}"
+                                    )
+                    
+                                    break
+                    
+                            except WebDriverException:
+                                raise
+                    
+                            except Exception:
+                                pass
+                    
+                            time.sleep(0.2)
+                    
+                    # ======================================
+                    # 2回ともURLが変わらなければクリック失敗
+                    # ======================================
+                    
+                    if not click_success:
+                        raise RuntimeError(
+                            "検索ボタンをクリックしても"
+                            "目的台番号のURLへ遷移しませんでした。"
+                            f" expected={expected_param!r}"
+                        )
+                    
                     # --------------------------------------
                     # 検索結果待機
                     # --------------------------------------
-
+                    
                     print_step(
                         "取得更新日・表示台番号待機"
                         "（最大60秒）"
                     )
-
-                    # 検索直後の描画待機
-                    time.sleep(6)
-
+                    
                     update_date, displayed_text = (
                         wait_for_update_date(
                             browser,
                             dai_number=dai_number,
                             timeout=60,
                         )
-                    )
-
-                    print_step(
-                        "検索結果確認完了"
                     )
 
                     # --------------------------------------
