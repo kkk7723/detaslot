@@ -146,7 +146,7 @@ PROXY_LIST = site_config.PROXY_LIST
 PROXY_ROTATE_EVERY = site_config.PROXY_ROTATE_EVERY
 
 db_path = site_config.DB_PATH
-cookie_file = site_config.COOKIE_FILE
+cookie_files = site_config.COOKIE_FILES
 output_root = site_config.SITE_OUTPUT_DIR
 
 table_name = TABLE_NAME
@@ -926,17 +926,27 @@ def click_more(
 
     return click_count
 
-def load_cookies(browser):
+def load_cookies(browser, cookie_file):
     try:
         with open(cookie_file, "r") as file:
             cookies = json.load(file)
-            for cookie in cookies:
-                if "sameSite" in cookie:
-                    cookie.pop("sameSite")
-                browser.add_cookie(cookie)
-        print("Cookies loaded.")
+
+        for cookie in cookies:
+            if "sameSite" in cookie:
+                cookie.pop("sameSite")
+
+            browser.add_cookie(cookie)
+
+        print(
+            f"[COOKIE] Cookies loaded: "
+            f"{cookie_file}"
+        )
+
     except FileNotFoundError:
-        print("No cookies found.")
+        print(
+            f"[COOKIE] No cookies found: "
+            f"{cookie_file}"
+        )
 
 def wait_browser_ready(driver, timeout=10):
     """Chrome起動直後の準備完了待ち（about:blank → readyState 確認 → no-op JS）"""
@@ -1533,6 +1543,7 @@ MAX_NAV_RETRY = site_config.MAX_NAV_RETRY
 def open_and_navigate_with_retry(
     proxy_url: str | None,
     target_url: str,
+    cookie_file,
 ):
     last_err = None
 
@@ -1608,7 +1619,10 @@ def open_and_navigate_with_retry(
             # Cookie投入
             # =====================
             if os.path.exists(cookie_file):
-                load_cookies(drv)
+                load_cookies(
+                    drv,
+                    cookie_file,
+                )
                 drv.refresh()
 
                 WebDriverWait(
@@ -2202,6 +2216,32 @@ sku_seq = get_starting_sku_seq(
 
 total = len(filtered_dai_numbers)
 
+# ==================================================
+# Cookie切替状態
+#
+# Cookieはbatch単位では切り替えない。
+# スクリプト開始時はCOOKIE_FILESの先頭を使用し、
+# HR01再起動が正常完了するたびに
+# 1つ次のCookieへ切り替える。
+# 最後まで到達したら先頭へ戻る。
+# ==================================================
+
+if not cookie_files:
+    raise RuntimeError(
+        "COOKIE_FILESが空です。"
+        " 店舗configに1個以上のCookieファイルを設定してください。"
+    )
+
+cookie_index = 0
+current_cookie_file = cookie_files[
+    cookie_index
+]
+
+print(
+    f"[COOKIE] 初期Cookie: "
+    f"{current_cookie_file}"
+)
+
 for batch_start in range(
     0,
     total,
@@ -2212,17 +2252,18 @@ for batch_start in range(
         total,
     )
 
+    # batchが変わってもCookieは変更しない。
+    # 現在のCookieをそのまま次のブラウザでも使用する。
+    print(
+        f"[COOKIE] 現在のCookie: "
+        f"{current_cookie_file}"
+    )
+
     proxy_url = resolve_proxy(
         batch_index=batch_start,
         mode=PROXY_MODE,
         proxy_list=PROXY_LIST,
         rotate_every=PROXY_ROTATE_EVERY,
-    )
-
-    print(
-        f"[INFO] Proxy for batch "
-        f"{batch_start}-{batch_end}: "
-        f"{proxy_url or '(none)'}"
     )
 
     # ==================================================
@@ -2247,6 +2288,7 @@ for batch_start in range(
         browser = open_and_navigate_with_retry(
             proxy_url,
             target_site,
+            current_cookie_file,
         )
 
     except Exception as e:
@@ -3185,7 +3227,23 @@ for batch_start in range(
                         print(
                             "[INFO] HR01再起動完了"
                         )
-                    
+
+                        # Cookieも次へ切り替え
+                        cookie_index = (
+                            cookie_index + 1
+                        ) % len(cookie_files)
+                        
+                        current_cookie_file = cookie_files[
+                            cookie_index
+                        ]
+                        
+                        print(
+                            f"[COOKIE] HR01再起動後Cookie切替: "
+                            f"{current_cookie_file}"
+                        )
+                        
+                        
+
                         # ----------------------------------
                         # HR01再起動後のIP確認
                         # ----------------------------------
@@ -3301,6 +3359,7 @@ for batch_start in range(
                         browser = open_and_navigate_with_retry(
                             proxy_url,
                             target_site,
+                            current_cookie_file,
                         )
                     
                         print(
