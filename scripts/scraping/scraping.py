@@ -2630,10 +2630,10 @@ for batch_start in range(
                     # --------------------------------------
                     
                     print(
-                        "[WAIT] もっと見るクリック前に8秒待機"
+                        "[WAIT] もっと見るクリック前に5秒待機"
                     )
                     
-                    time.sleep(8)
+                    time.sleep(5)
                     
                     # --------------------------------------
                     # もっと見る
@@ -3419,7 +3419,7 @@ for batch_start in range(
                 "[WAIT] 次の台まで15秒待機"
             )
             
-            time.sleep(15)
+            time.sleep(10)
 
     # ==================================================
     # バッチ終了
@@ -3455,7 +3455,7 @@ for batch_start in range(
             f"{browser_error}"
         )
 
-    time.sleep(5)
+    time.sleep(20)
 
 
 conn.close()
