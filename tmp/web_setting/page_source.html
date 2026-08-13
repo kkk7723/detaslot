@@ -1,0 +1,633 @@
+<html lang="ja" style="height: auto; min-height: 100%;"><head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
+    <meta http-equiv="Content-Language" content="ja">
+    <link rel="shortcut icon" href="favicon.ico">
+    <title>5G Router</title>
+
+    <!-- General CSS Files -->
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/all.css">
+
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <!-- <link rel="stylesheet" href="assets/css/selectric.css"> -->
+    <link rel="stylesheet" href="assets/css/toastr.min.css">
+    <link rel="stylesheet" href="assets/css/AdminLTE.min.css">
+
+    <!-- <link rel="stylesheet" href="assets/css/jquery.loadingModal.min.css"> -->
+    
+
+<style> @-webkit-keyframes loadingoverlay_animation__rotate_right { to { -webkit-transform : rotate(360deg); transform : rotate(360deg); } } @keyframes loadingoverlay_animation__rotate_right { to { -webkit-transform : rotate(360deg); transform : rotate(360deg); } } @-webkit-keyframes loadingoverlay_animation__rotate_left { to { -webkit-transform : rotate(-360deg); transform : rotate(-360deg); } } @keyframes loadingoverlay_animation__rotate_left { to { -webkit-transform : rotate(-360deg); transform : rotate(-360deg); } } @-webkit-keyframes loadingoverlay_animation__fadein { 0% { opacity   : 0; -webkit-transform : scale(0.1, 0.1); transform : scale(0.1, 0.1); } 50% { opacity   : 1; } 100% { opacity   : 0; -webkit-transform : scale(1, 1); transform : scale(1, 1); } } @keyframes loadingoverlay_animation__fadein { 0% { opacity   : 0; -webkit-transform : scale(0.1, 0.1); transform : scale(0.1, 0.1); } 50% { opacity   : 1; } 100% { opacity   : 0; -webkit-transform : scale(1, 1); transform : scale(1, 1); } } @-webkit-keyframes loadingoverlay_animation__pulse { 0% { -webkit-transform : scale(0, 0); transform : scale(0, 0); } 50% { -webkit-transform : scale(1, 1); transform : scale(1, 1); } 100% { -webkit-transform : scale(0, 0); transform : scale(0, 0); } } @keyframes loadingoverlay_animation__pulse { 0% { -webkit-transform : scale(0, 0); transform : scale(0, 0); } 50% { -webkit-transform : scale(1, 1); transform : scale(1, 1); } 100% { -webkit-transform : scale(0, 0); transform : scale(0, 0); } } </style></head>
+
+<body style="height: auto; min-height: 100%;">
+    <div id="app" class="all-height">
+        <div class="main-wrapper">
+            <div class="navbar-bg">
+                <div id="NowDateTime" class="globalDateTime">2026/08/13 14:49</div>
+            </div>
+            <!-- nav bar -->
+            <div id="nav-section">             
+                <nav class="navbar navbar-expand-lg main-navbar">                  
+                    
+                    <div class="form-inline mr-auto">
+                        <ul class="navbar-nav">
+                            <li class="ham"><a href="#" data-toggle="push-menu" class="nav-link nav-link-lg"><i class="fas fa-bars"></i></a>
+                            </li>
+                            <li id="m-logo" class="text-white d-block align-self-center" style="margin-left: 5px"><img alt="image" width="75" height="16" src="assets/img/5g_status/brand_logo.svg"></li>
+                        </ul>
+                    </div>
+                                       
+                    
+                    <div id="loginSection" style="display: none;">
+                        <ul class="navbar-nav navbar-right">
+                            <li class="nav-item notification_icon" style="display: none"><img class="nav-icon" src="assets/img/5g_status/ic_status_sw_notification.svg"></li>
+                            <li class="nav-item downloading_icon" style="display: none"><img class="nav-icon" src="assets/img/5g_status/ic_status_sw_download.svg"></li>
+                            <li class="nav-item ethernet_icon" style=""><img class="nav-icon" src="assets/img/5g_status/ic_status_ethernet_connection.svg"></li>
+
+                            <li><img class="connect_icon nav-icon" style="" src="assets/img/5g_status/ic_status_4g_plus.svg"></li>
+                            <li><img class="signal_icon nav-icon" style="" src="assets/img/5g_status/ic_status_signal_full.svg"></li>
+
+                            <li class="nav-item">
+                                <div class="row">
+                                    <div class="d-none d-sm-block" style="color:#5F5F5F;margin-left: 20px; margin-top: 5px;"><span data-locale="nav.language">Language</span></div>
+                                    <div class="dropdown dropdown-menu-button d-none d-sm-block" style="margin-right: 20px;">
+                                        <a href="#" data-toggle="dropdown" class="nav-link dropdown-toggle nav-link-lg nav-link-user">
+                                            <div id="lang_text_large" class="lang_text_large d-none d-sm-inline-block">日本語</div>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            <a class="dropdown-item has-icon" onclick="changeLanguage('jp')">
+                                                <i class=""></i><span data-locale="nav.JpLong">日本語</span></a>
+                                            <a class="dropdown-item has-icon" onclick="changeLanguage('en')">
+                                                <i class=""></i><span data-locale="nav.EnLong">English</span></a>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown dropdown-menu-button d-block d-sm-none" style="margin-left: 20px; margin-right: 20px;">
+                                        <a href="#" data-toggle="dropdown" class="nav-link dropdown-toggle nav-link-lg nav-link-user">
+                                            <div id="lang_text_small" class="lang_text_small d-inline-block d-sm-none d-lg-block ">日</div>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            <a class="dropdown-item has-icon" onclick="changeLanguage('jp')">
+                                                <i class=""></i><span data-locale="nav.Jp">日</span></a>
+                                            <a class="dropdown-item has-icon" onclick="changeLanguage('en')">
+                                                <i class=""></i><span data-locale="nav.En">EN</span></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                            <li>
+                                <button type="button" class="btn btn-outline-primary login-button" onclick="GetNativeAppStatus()">
+                                    <span data-locale="common.Login">ログイン</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div id="userMenu" style="">
+                        <ul class="navbar-nav navbar-right">
+                            <li class="nav-item notification_icon" style="display: none"><img class="nav-icon" src="assets/img/5g_status/ic_status_sw_notification.svg"></li>
+                            <li class="nav-item downloading_icon" style="display: none"><img class="nav-icon" src="assets/img/5g_status/ic_status_sw_download.svg"></li>
+                            <li class="nav-item ethernet_icon" style=""><img class="nav-icon" src="assets/img/5g_status/ic_status_ethernet_connection.svg"></li>
+
+                            <li class="nav-item"><img class="connect_icon nav-icon" style="" src="assets/img/5g_status/ic_status_4g_plus.svg"></li>
+                            <li class="nav-item"><img class="signal_icon nav-icon" style="" src="assets/img/5g_status/ic_status_signal_full.svg"></li>
+                            <li class="nav-item"><img class="battery_icon nav-icon" style="display: none"></li>
+                            <li class="nav-item">
+                                <div class="row">
+                                    <div class="d-none d-sm-block" style="color:#5F5F5F;margin-left: 20px; margin-top: 5px;"><span data-locale="nav.language">Language</span></div>
+                                    <div class="dropdown dropdown-menu-button d-none d-sm-block" style="margin-right: 15px;">
+                                        <a href="#" data-toggle="dropdown" class="nav-link dropdown-toggle nav-link-lg nav-link-user">
+                                            <div id="lang_text_large" class="lang_text_large d-none d-sm-inline-block">日本語</div>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            <a class="dropdown-item has-icon" onclick="changeLanguage('jp')">
+                                                <i class=""></i><span data-locale="nav.JpLong">日本語</span></a>
+                                            <a class="dropdown-item has-icon" onclick="changeLanguage('en')">
+                                                <i class=""></i><span data-locale="nav.EnLong">English</span></a>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown dropdown-menu-button d-block d-sm-none" style="margin-left: 20px; margin-right: 15px;">
+                                        <a href="#" data-toggle="dropdown" class="nav-link dropdown-toggle nav-link-lg nav-link-user">
+                                            <div id="lang_text_small" class="lang_text_small d-inline-block d-sm-none d-lg-block ">日</div>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            <a class="dropdown-item has-icon" onclick="changeLanguage('jp')">
+                                                <i class=""></i><span data-locale="nav.Jp">日</span></a>
+                                            <a class="dropdown-item has-icon" onclick="changeLanguage('en')">
+                                                <i class=""></i><span data-locale="nav.En">EN</span></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="ml-1">
+                                <button type="button" class="btn btn-outline-primary nav-link-lg nav-link-user logout-button" data-toggle="modal" data-target="#logoutModal">
+                                    <span data-locale="common.Logout">ログアウト</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                </nav>
+            </div>
+            <!-- <a href="#" data-toggle="push-menu" class="nav-link nav-link-lg"><i class="fas fa-bars"></i></a> -->
+
+            
+            <!-- <div id="menu-section"></div> -->
+            
+            <!-- <div class="close-sidebar navbar-nav">
+  <a href="#" class="sidebar-toggle nav-link nav-link-lg" data-toggle="push-menu">
+    <i class="fas fa-bars"></i>
+  </a>
+</div> -->
+            <aside id="aside" class="main-sidebar d-block d-md-none d-lg-block sidebar-height">
+
+
+
+                <!-- sidebar: style can be found in sidebar.less -->
+                <section class="sidebar">
+                    <div class="row sidebar-logo text-white">
+                        <div class="col-6">
+                            <a href="index.html">
+                                <img alt="image" width="119" height="26" src="assets/img/5g_status/brand_logo.svg">
+                            </a>
+                        </div>
+                        <div class="col-6 text-right close-sidebar d-block d-lg-none">
+                            <a href="#" class="sidebar-toggle nav-link nav-link-lg" data-toggle="push-menu">
+                                <i class="fas fa-bars"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- <div id="m-logo" class="sidebar-logo text-white d-block">
+<img alt="image" width="119" height="26" src="assets/img/5g_status/brand_logo.svg">
+
+</div> -->
+                    <!-- sidebar menu: : style can be found in sidebar.less -->
+                    <ul class="sidebar-menu tree" data-widget="tree">
+                        <!-- <li class="header">MAIN NAVIGATION</li> -->
+                        <li id="mifi-home">
+                            <a href="index.html">
+                                <span class="i-home"></span><span data-locale="menu.Home">ホーム</span>
+                            </a>
+                        </li>
+                        <li id="mifi-connected-clients" class="treeview">
+                            <a href="#">
+                                <span class="i-connectClient"></span><span data-locale="menu.ConnectedClients">接続端末</span>
+                                <span class="pull-right-container">
+                                    <i class="fa fa-angle-left pull-right"></i>
+                                </span>
+                            </a>
+                            <ul class="treeview-menu">
+                                <li id="mifi-connect-client_list"><a href="mifi-connect-client_list.html"><i class="fa fa-circle-o"></i>
+                                        <span data-locale="menu.ClientList">接続リスト</span></a></li>
+                                <li id="mifi-lan-wifi-mac-address-filter"><a href="mifi-lan-wifi-mac-address-filter.html"><i class="fa fa-circle-o"></i><span data-locale="menu.MACAddressFiltering">MACアドレスフィルタリング</span></a></li>
+                            </ul>
+                        </li>
+
+
+                        <li id="mifi-settings" class="treeview">
+                            <a href="#">
+                                <span class="i-system"></span><span data-locale="menu.Settings">設定</span>
+                                <span class="pull-right-container">
+                                    <i class="fa fa-angle-left pull-right"></i>
+                                </span>
+                            </a>
+                            <ul class="treeview-menu">
+                                <li id="mifi-mobile-network-settings" class="treeview">
+                                    <a href="#"><i class="fa fa-circle-o"></i><span data-locale="menu.MobileNetworkSettings">モバイルネットワーク設定</span>
+                                        <span class="pull-right-container">
+                                            <i class="fa fa-angle-left pull-right"></i>
+                                        </span>
+                                    </a>
+                                    <ul class="treeview-menu">
+                                        <li id="mifi-network-configuration"><a href="mifi-network-configuration.html"><i class="fa fa-circle-o"></i><span data-locale="menu.NetworkConfiguration">ネットワーク設定</span></a></li>
+
+                                        <li id="mifi-apn-profile-setting_edit"><a href="mifi-apn-profile-setting_edit.html"><i class="fa fa-circle-o"></i><span data-locale="menu.APNProfileSettings">APNプロファイル設定</span></a></li>
+                                    </ul>
+                                </li>
+
+                                <li id="lan-settings" class="treeview">
+                                    <a href="#"><i class="fa fa-circle-o"></i><span data-locale="menu.LANSettings">LAN設定</span>
+                                        <span class="pull-right-container">
+                                            <i class="fa fa-angle-left pull-right"></i>
+                                        </span>
+                                    </a>
+                                    <ul class="treeview-menu">
+                                        <li id="mifi-lan-wifi-dhcp"><a href="mifi-lan-wifi-dhcp.html"><i class="fa fa-circle-o"></i><span data-locale="menu.DHCPServer">DHCPサーバー</span></a></li>
+                                        <li id="mifi-lan-firewall"><a href="mifi-lan-firewall.html"><i class="fa fa-circle-o"></i>
+                                                <span data-locale="menu.Firewall">ファイアウォール</span></a>
+                                        </li>
+                                        <li id="mifi-lan-ip-filtering"><a href="mifi-lan-ip-filtering.html"><i class="fa fa-circle-o"></i>
+                                                <span data-locale="menu.IPAddressFiltering">IPアドレスフィルタリング</span></a></li>
+                                        
+                                        <li id="mifi-router_settings_nat_settings"><a href="mifi-router_settings_nat_settings.html"><i class="fa fa-circle-o"></i><span data-locale="setting.nat">NAT</span></a></li>
+                                        <li id="mifi-router_settings_vpn_settings"><a href="mifi-router_settings_vpn_settings.html"><i class="fa fa-circle-o"></i><span data-locale="setting.vpn">VPNパススルー</span></a></li>
+
+                                    </ul>
+                                </li>
+                                <li id="mifi-wifi-settings" class="treeview">
+                                    <a href="#"><i class="fa fa-circle-o"></i><span data-locale="menu.Wi-FiSettings">Wi-Fi設定</span>
+                                        <span class="pull-right-container">
+                                            <i class="fa fa-angle-left pull-right"></i>
+                                        </span>
+                                    </a>
+                                    <ul class="treeview-menu">
+                                        <li id="mifi-lan-wifi-basic"><a href="mifi-lan-wifi-basic.html"><i class="fa fa-circle-o"></i>
+                                                <span data-locale="menu.Basic">基本設定</span></a></li>
+                                        <li id="mifi-lan-wifi-advanced"><a href="mifi-lan-wifi-advanced.html"><i class="fa fa-circle-o"></i>
+                                                <span data-locale="menu.Advanced">詳細設定</span></a></li>
+                                        <li id="mifi-wifi-settings-wps-idle"><a href="mifi-wifi-settings-wps-idle.html"><i class="fa fa-circle-o"></i><span data-locale="menu.WPS">WPS</span></a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li id="mifi-device-settings" class="treeview">
+                                    <a href="#"><i class="fa fa-circle-o"></i><span data-locale="menu.DeviceSettings">端末設定</span>
+                                        <span class="pull-right-container">
+                                            <i class="fa fa-angle-left pull-right"></i>
+                                        </span>
+                                    </a>
+                                    <ul class="treeview-menu">
+                                        <li id="mifi-system-settings-webui-password"><a href="mifi-system-settings-webui-password.html"><i class="fa fa-circle-o"></i><span data-locale="menu.WebUIPassword">Web設定ツールパスワード</span></a></li>
+                                        <li id="mifi-device-settings-data-usage-settings"><a href="mifi-device-settings-data-usage-settings.html"><i class="fa fa-circle-o"></i><span data-locale="menu.DataUsageSettings">データ通信量設定</span></a></li>
+                                        <li id="mifi-device-settings-ethernet-settings"><a href="mifi-device-settings-ethernet-settings.html"><i class="fa fa-circle-o"></i><span data-locale="ethernet.EthernetSetting">有線LAN設定</span></a></li>
+                                        <li id="mifi-wifi-settings-dateTime"><a href="mifi-wifi-settings-dateTime.html"><i class="fa fa-circle-o"></i><span data-locale="menu.DateandTimeSettings">日時設定</span></a></li>
+
+                                        <li id="mifi-system-settings-backup-and-restore"><a href="mifi-system-settings-backup-and-restore.html"><i class="fa fa-circle-o"></i><span data-locale="menu.BackupRestore">バックアップとリストア</span></a></li>
+                                        <li id="mifi-system-settings-software-update"><a href="mifi-system-settings-software-update.html"><i class="fa fa-circle-o"></i><span data-locale="menu.SoftwareUpdate">ソフトウェア更新</span></a></li>
+                                        <li id="mifi-system-settings-reset-default"><a href="mifi-system-settings-reset-default.html"><i class="fa fa-circle-o"></i><span data-locale="menu.ResetDefault">オールリセット</span></a></li>
+                                        <li id="mifi-system-settings-reboot"><a href="mifi-system-settings-reboot.html"><i class="fa fa-circle-o"></i><span data-locale="menu.Reboot">再起動</span></a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li id="mifi-about">
+                            <a href="mifi-about.html">
+                                <span class="i-about"></span><span data-locale="menu.About">端末情報</span>
+                            </a>
+                        </li>
+                    </ul>
+                </section>
+                <!-- /.sidebar -->
+            </aside>
+
+            
+            
+
+            <!-- Main Content -->
+            <div class="main-content content-height">
+                <section class="section">
+                    <div class="section-body">
+                        <!-- Breadcrumbs -->
+
+                        <!-- Breadcrumbs end-->
+                        <!-- device status start -->
+                        <div class="mt-4 mt-md-4 mt-lg-4 row">
+                            <div class="col-12 col-md-12 col-lg-12 text-left">
+                                <!--  card end -->
+                            </div>
+                        </div>
+                        <!-- device status end -->
+
+                        <div class="row mt-sm-0">
+                            <div class="col-12 col-md-12 col-lg-4">
+                                
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4><span data-locale="home.Connectedstatus">接続状態</span></h4>
+                                    </div>
+                                    <div class="card-body">
+
+                                        <div class="row mb-2">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.Conn.Status">ステータス:</span>&nbsp;<span id="ConnectStatus" class="card-sub-font"><span data-locale="home.Connected">接続中</span></span>
+                                            </div>
+                                        </div>
+
+                                        <div class="row mb-2">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.Network">ネットワーク:</span>&nbsp;<span id="home_network" class="card-sub-font">4G+</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="row mb-2">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.ConnectionTime">期間:</span>&nbsp;<span id="ConnectTime" class="card-sub-font"></span>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.WANIPAddress">WAN IPv4アドレス:</span>&nbsp;<span id="home_wan_ip_address" class="card-sub-font">10.188.132.84</span>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.IPv4DNSServer">IPv4 DNSサーバー:</span>&nbsp;<span id="home_wan_ipdns_address" class="card-sub-font">172.16.206.49</span>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.WANIPv6Address">WAN IPv6アドレス:</span>&nbsp;<span id="home_wan_ipv6_address" class="card-sub-font">240b:c020:4e1:1494:6489:6336:2585:2ca4</span>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.IPv6DNSServer">IPv6 DNSサーバー:</span>&nbsp;<span id="home_ipv6dns_address" class="card-sub-font">240b:c000::cafe:1</span>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.LANIPAddress">LAN IPv4アドレス:</span>&nbsp;<span id="home_lan_ip_address" class="card-sub-font">192.168.128.1</span>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.LANMACAddress">LAN MACアドレス:</span>&nbsp;<span id="home_lan_mac_address" class="card-sub-font">58:C9:35:D8:9F:D6</span>
+                                            </div>
+                                        </div>
+
+                                        <!--                     <div class="row mb-2">
+                      <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                        <span id="" class="font-weight-bold" data-locale="home.VPNPass-through"></span>&nbsp;<span
+                          id="home_VPNPassthrough" class="card-sub-font">PPTP, L2TP, IPSec</span>
+                      </div>
+                    </div>
+                    <div class="row mb-2">
+                      <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                        <span id="" class="font-weight-bold" data-locale="home.EthernetMACAddress"></span>&nbsp;<span id="home_Ethernet_address" class="card-sub-font"></span>
+                      </div>
+                    </div> -->
+
+                                    </div>
+                                </div>
+                                
+                                
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4><span data-locale="home.Datausage">データ通信量</span></h4>
+                                    </div>
+                                    <div class="card-body">
+
+                                        <div class="row mb-0">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.DataVolume">データ通信量:</span>
+                                                <dd id="data1" class="card-sub-font">67.9 GB<span data-locale="common.of">/</span>999.0 TB</dd>
+                                                <dd id="data2" class="card-sub-font"></dd>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.RemainingDuration">残りの期間:</span>&nbsp;<span id="DurationTime" class="card-sub-font">18<span data-locale="days">日</span> 09:10</span>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.LastClear">最終リセット日:</span>&nbsp;<span id="LastReset" class="card-sub-font">2026/08/01</span>
+                                            </div>
+                                        </div>
+                                        <div id="reset_section" class="row mt-4" style="">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <button class="btn btn-primary justify-content-around" type="button" onclick="ConfirmSetDataUsageReset()"><span data-locale="home.RESET">リセット</span></button>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3 mt-3">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <small class="card-sub-font" data-locale="home.DataUsageMessage">表示されるデータ通信量は目安となります。正確なデータ通信量を確認するためには、My docomoページなどをご確認ください。</small>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                
+
+
+                            </div>
+
+                            <!--card-2 -->
+                            <div class="col-12 col-md-12 col-lg-8">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4><span data-locale="menu.ClientList">接続リスト</span></h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-1">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.Numberofclients">接続端末数:</span>&nbsp;<span id="Device_Num" class="card-sub-font">1</span>
+                                            </div>
+                                        </div>
+                                        <!--  -->
+                                        <div class="row mb-1">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="menu.Wi-Fi">Wi-Fi</span>
+                                            </div>
+                                        </div>   
+                                        <div class="row mb-2">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.Status">状態:</span>&nbsp;<span id="SSID_A_Status" class="card-sub-font"><span data-locale="common.On">オン</span></span>
+                                            </div>
+                                        </div>                                                                          
+                                        <div class="row mb-1">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.SSIDA">SSID A:</span>&nbsp;<span id="SSID_A_Name" class="card-sub-font">HR01a-D89FD6</span>
+                                            </div>
+                                        </div>
+                                        <div id="SSID_A_card" class="row mb-2"></div>
+                                        <!--  -->
+                                        <div class="row mb-1">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.SSIDB">SSID B:</span>&nbsp;<span id="SSID_B_Status" class="card-sub-font">HR01b-D89FD7</span>
+                                            </div>
+                                        </div>
+                                        <div id="SSID_B_card" class="row mb-2"></div>
+
+                                        <!-- <div class="row mb-1">
+                      <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                        <span id="" class="font-weight-bold" data-locale="home.USB"></span>&nbsp;<span id="USB_Status"
+                          class="card-sub-font"></span>
+                      </div>
+                    </div>
+                    <div id="USB_card" class="row mb-2">
+                    </div> -->
+
+                                        <div class="row mb-1">
+                                            <div class="col-12 col-md-12 col-lg-12 text-left align-self-center">
+                                                <span id="" class="font-weight-bold" data-locale="home.Ethernet">有線LAN:</span>&nbsp;<span id="Ethernet_Status" class="card-sub-font"></span>
+                                            </div>
+                                        </div>
+                                        <div id="Ethernet_card" class="row mb-2"><div class="col-12 col-md-6 col-lg-6 text-left align-self-center"><div class="card-panel"><div class="row col-12 col-md-12 col-lg-12 text-center" style="padding-right:0px"><div class="col-12 col-md-5 col-lg-5 text-center align-self-center mt-2 mb-2"><img alt="image" class="card-image3" src="assets/img/5g_content/card_image_portrait_small.svg"></div><div class="col-12 col-md-7 col-lg-7 text-left mt-2 mb-2"><small style="color:#9EA8B3" data-locale="client.list.HostName">ホスト名</small><dt style="color:#5F6F81">ubuntu-System-Product-Name</dt><small style="color:#9EA8B3" data-locale="home.IPAddress">IPアドレス</small><dt style="color:#5F6F81">192.168.128.185</dt><small style="color:#9EA8B3" data-locale="home.MACAddress">MACアドレス</small><dt style="color:#5F6F81">c4:36:c0:eb:d4:ef</dt></div></div></div></div></div>
+
+                                    </div>
+                                </div>
+                                <!-- card end -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <!-- Main Content end -->
+
+            <!-- Login modal start -->
+            <div class="modal fade" id="loginmodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel" data-locale="common.Login">ログイン</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="login-form" name="login" action="" novalidate="novalidate">
+                                <div class="form-group">
+                                    <label for="recipient-name" class="col-form-label" data-locale="common.inputLogin">ログインパスワードを入力してください</label>
+                                    <input type="password" class="form-control show-password" id="password" name="password" autocomplete="">
+                                </div>
+                                <div id="error-msg"></div>
+                                <input type="hidden" name="csrftoken" id="csrftoken" value="7ee8e9d788">
+                                <button type="submit" id="submit" class="btn btn-primary"><span data-locale="common.Login">ログイン</span></button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- confirmSetDataUsageReset modal start -->
+            <div class="modal fade" id="confirmSetDataUsageReset" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" data-locale="setting.dataUsage.Reset">リセット</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p><span data-locale="home.resetMassage">データ通信量をリセットします。よろしいですか？</span></p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="SetDataUsageReset()"><span data-locale="common.OK">OK</span></button>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal"><span data-locale="common.Cancel">キャンセル</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- confirmReboot modal start -->
+            <div class="modal fade" id="routerinuse" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><span data-locale="home.Routerisinuse">使用中</span></h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p><span data-locale="home.Pleaselock">ログインするために本製品の画面を消してください</span></p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-dismiss="modal"><span data-locale="common.OK">OK</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer start -->
+            <div id="footer-section">
+<!-- <div class="modal fade" id="langModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Language</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body text-center">
+            <form id="login-form" name="login" action="">
+              <button id="jp" type="button" class="btn btn-primary translate" data-locale="langJA">日本語</button>
+              <button id="en" type="button" class="btn btn-primary translate" data-locale="langEN">English</button>              
+            </form>
+          </div>
+
+      </div>
+    </div>
+  </div>   -->
+
+<div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><span data-locale="common.Logout">ログアウト</span></h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><span data-locale="common.LogoutConfirm">ログアウトしますか?</span></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="clearSession()"><span data-locale="common.Yes">はい</span></button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal"><span data-locale="common.No">いいえ</span></button>
+      </div>
+    </div>
+  </div>
+</div> 
+<!-- <footer class="main-footer">
+    <div class="footer-left">
+      Copyright &copy; 2018 <div class="bullet"></div> Design By <a href="https://nauval.in/">Muhamad Nauval Azhar</a>
+    </div>
+    <div class="footer-right">
+    </div>
+</footer> -->
+</div>
+            <!-- Footer end -->
+        </div>
+    </div>
+
+
+    <!-- General JS Scripts -->
+    <script src="assets/js/jquery-3.6.0.min.js"></script>
+    <script src="assets/js/jquery.i18n.properties-min-1.0.9.js"></script>
+    <script src="assets/js/main.js"></script>
+
+    <script src="assets/js/popper.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <!-- <script src="assets/js/jquery.nicescroll.min.js"></script> -->
+    <script src="assets/js/moment.min.js"></script>
+    <!-- <script src="assets/js/stisla.js"></script> -->
+    <script src="assets/js/jquery.validate.min.js"></script>
+    <!-- <script src="assets/js/jquery.selectric.min.js"></script> -->
+
+    <!-- Template JS File -->
+    <!-- <script src="assets/js/scripts.js"></script> -->
+    <script src="assets/js/custom.js"></script>
+    
+    <script src="assets/js/toastr.min.js"></script>
+    <!-- <script src="assets/js/jquery.loadingModal.min.js"></script> -->
+    <script src="assets/js/loadingoverlay.min.js"></script>
+
+    <script src="assets/js/adminlte.js"></script>
+    <script src="assets/js/bootstrap4-toggle.min.js"></script>
+
+    <!-- <script src="assets/js/form-validation.js"></script> -->
+    <!-- Page Specific JS File -->
+
+    <script>
+        $(document).ready(function () {
+            $.getScript("assets/js/form-validation.js");
+            //if(session_token) {
+            //getDeviceInfo(getHomeInfo); 
+            //getDeviceInfo(getHomeInfo  , GetDataUsageStatsHome); 
+            getDeviceInfoIndex(GetConnectWifiDevice, GetDataUsageStatsHome); 
+            if (session_token) {
+                $("#reset_section").show();
+            }
+
+
+        });
+    </script>
+
+
+
+</body></html>
