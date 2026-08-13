@@ -26,6 +26,9 @@ PROJECT_DIR = "itukaichi_gaia_s"
 # HTMLやサイト内で表示する店舗名
 SHOP_NAME = "ガイア五日市店s"
 
+# クッキー取得に使うurl
+COOKIE_URL = "https://www.pscube.jp/dedamajyoho-P-townDMMpachi/c745762"
+
 # ログにでてくるファイル名
 LOG_FILE_SUFFIX = "itukaichi_gaia_s.log"
 
