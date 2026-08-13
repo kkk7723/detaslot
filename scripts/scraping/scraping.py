@@ -804,7 +804,7 @@ for batch_start in range(
                     )
 
                     # 追加
-                    time.sleep(3)
+                    time.sleep(2)
 
                     # --------------------------------------
                     # 検索ボタン取得
@@ -1010,7 +1010,7 @@ for batch_start in range(
                         "[WAIT] もっと見るクリック前に5秒待機"
                     )
                     
-                    time.sleep(5)
+                    time.sleep(4)
                     
                     # --------------------------------------
                     # もっと見る
@@ -1541,7 +1541,7 @@ for batch_start in range(
                     
                         print("[INFO] ブラウザプロセス終了完了")
                     
-                        time.sleep(3)
+                        time.sleep(2)
                     
                         # ----------------------------------
                         # HR01再起動前のIP確認
@@ -1802,10 +1802,10 @@ for batch_start in range(
             # ==============================================
         
             print(
-                "[WAIT] 次の台まで8秒待機"
+                "[WAIT] 次の台まで7秒待機"
             )
             
-            time.sleep(8)
+            time.sleep(7)
 
     # ==================================================
     # バッチ終了
@@ -1841,7 +1841,7 @@ for batch_start in range(
             f"{browser_error}"
         )
 
-    time.sleep(20)
+    time.sleep(15)
 
 
 conn.close()
