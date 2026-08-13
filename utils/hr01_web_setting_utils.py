@@ -24,12 +24,12 @@ from config.common import (
 PAGE_LOAD_TIMEOUT = 30
 ELEMENT_TIMEOUT = 20
 PAGE_INITIALIZE_WAIT = 3
-NETWORK_SEARCH_TIMEOUT = 60
+NETWORK_SEARCH_TIMEOUT = 90
 
 TARGET_NETWORK_NAME = "NTT DOCOMO"
 
 # ネットワーク設定完了後の待機時間
-IP_RECHECK_WAIT = 60
+IP_RECHECK_WAIT = 90
 
 
 # ==================================================
